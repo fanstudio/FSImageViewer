@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		2CC3DCF2084E20B0B4E51AB1 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E3CBC36B3E911341CEF05B8 /* libPods.a */; };
+		E62CABF91C857AF500AEFF34 /* FSImageViewerItemView.m in Sources */ = {isa = PBXBuildFile; fileRef = E62CABF81C857AF500AEFF34 /* FSImageViewerItemView.m */; };
+		E62CABFE1C857B7500AEFF34 /* UIView+FSLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = E62CABFD1C857B7500AEFF34 /* UIView+FSLayout.m */; };
 		E64D1F081C8428B900836122 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = E64D1EFD1C8428B900836122 /* AppDelegate.m */; };
 		E64D1F091C8428B900836122 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E64D1EFE1C8428B900836122 /* LaunchScreen.storyboard */; };
 		E64D1F0B1C8428B900836122 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E64D1F021C8428B900836122 /* main.m */; };
@@ -18,6 +20,11 @@
 /* Begin PBXFileReference section */
 		15CD84D86C3534F01340CFFD /* Pods.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.release.xcconfig; path = "Pods/Target Support Files/Pods/Pods.release.xcconfig"; sourceTree = "<group>"; };
 		4E3CBC36B3E911341CEF05B8 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E62CABF71C857AF500AEFF34 /* FSImageViewerItemView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FSImageViewerItemView.h; sourceTree = "<group>"; };
+		E62CABF81C857AF500AEFF34 /* FSImageViewerItemView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FSImageViewerItemView.m; sourceTree = "<group>"; };
+		E62CABFC1C857B7500AEFF34 /* UIView+FSLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIView+FSLayout.h"; sourceTree = "<group>"; };
+		E62CABFD1C857B7500AEFF34 /* UIView+FSLayout.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIView+FSLayout.m"; sourceTree = "<group>"; };
+		E62CABFF1C857BE200AEFF34 /* FSCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FSCommon.h; sourceTree = "<group>"; };
 		E64D1EDF1C8427D400836122 /* oc_controls.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = oc_controls.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E64D1EFC1C8428B900836122 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		E64D1EFD1C8428B900836122 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -51,6 +58,33 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		E62CABF61C857AA100AEFF34 /* ImageViewer */ = {
+			isa = PBXGroup;
+			children = (
+				E62CABF71C857AF500AEFF34 /* FSImageViewerItemView.h */,
+				E62CABF81C857AF500AEFF34 /* FSImageViewerItemView.m */,
+			);
+			path = ImageViewer;
+			sourceTree = "<group>";
+		};
+		E62CABFA1C857B4200AEFF34 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				E62CABFF1C857BE200AEFF34 /* FSCommon.h */,
+				E62CABFB1C857B4200AEFF34 /* Cateory */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		E62CABFB1C857B4200AEFF34 /* Cateory */ = {
+			isa = PBXGroup;
+			children = (
+				E62CABFC1C857B7500AEFF34 /* UIView+FSLayout.h */,
+				E62CABFD1C857B7500AEFF34 /* UIView+FSLayout.m */,
+			);
+			path = Cateory;
+			sourceTree = "<group>";
+		};
 		E64D1ED61C8427D400836122 = {
 			isa = PBXGroup;
 			children = (
@@ -81,17 +115,11 @@
 		E64D1EF91C8428B900836122 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				E64D1EFA1C8428B900836122 /* Common */,
+				E62CABFA1C857B4200AEFF34 /* Common */,
+				E62CABF61C857AA100AEFF34 /* ImageViewer */,
 				E64D1EFB1C8428B900836122 /* Main */,
 			);
 			path = Classes;
-			sourceTree = "<group>";
-		};
-		E64D1EFA1C8428B900836122 /* Common */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Common;
 			sourceTree = "<group>";
 		};
 		E64D1EFB1C8428B900836122 /* Main */ = {
@@ -247,6 +275,8 @@
 			files = (
 				E64D1F111C842DF900836122 /* FSMainController.m in Sources */,
 				E64D1F0B1C8428B900836122 /* main.m in Sources */,
+				E62CABFE1C857B7500AEFF34 /* UIView+FSLayout.m in Sources */,
+				E62CABF91C857AF500AEFF34 /* FSImageViewerItemView.m in Sources */,
 				E64D1F081C8428B900836122 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
