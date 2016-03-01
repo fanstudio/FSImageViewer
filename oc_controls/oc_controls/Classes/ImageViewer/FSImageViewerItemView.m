@@ -4,7 +4,7 @@
 //
 //  Created by fzhang on 16/3/1.
 //  Copyright © 2016年 fanstudio. All rights reserved.
-//
+// 双击与单击参考自：http://blog.csdn.net/hopedark/article/details/17607325
 
 #import "FSImageViewerItemView.h"
 #import "FSCommon.h"
@@ -24,6 +24,7 @@
         self.backgroundColor = [UIColor blackColor];
         [self setupScrollView];
         [self setupImageView];
+        [self addGestureRecognizer];
     }
     return self;
 }
@@ -32,24 +33,36 @@
     UIScrollView *scrollView = [UIScrollView new];
     [self addSubview:scrollView];
     self.scrollView = scrollView;
-//    scrollView.backgroundColor = [UIColor blackColor];
+    scrollView.backgroundColor = [UIColor blackColor];
     scrollView.delegate = self;
-    scrollView.maximumZoomScale = 10.0;
-    scrollView.minimumZoomScale = 0.5;
+    scrollView.maximumZoomScale = 3.0;
+}
+
+// 放大手势
+// 缩小手势，
+// 双击手势，从点击点放大或复原
+// 单击手势,退出
+- (void)addGestureRecognizer {
+    UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:
+                                                self action:@selector(handleSingleTap:)];
+    singleTapGesture.numberOfTapsRequired = 1;
+    singleTapGesture.numberOfTouchesRequired  = 1;
+    [self.scrollView addGestureRecognizer:singleTapGesture];
+    
+    UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:
+                                                self action:@selector(handleDoubleTap:)];
+    doubleTapGesture.numberOfTapsRequired = 2;
+    doubleTapGesture.numberOfTouchesRequired = 1;
+    [self.scrollView addGestureRecognizer:doubleTapGesture];
+    
+    [singleTapGesture requireGestureRecognizerToFail:doubleTapGesture];
 }
 
 - (void)setupImageView {
     UIImageView *imageView = [UIImageView new];
     [self.scrollView addSubview:imageView];
     self.imageView = imageView;
-    
     imageView.image = [UIImage imageNamed:@"bg"];
-    
-    
-    // 放大手势
-    // 缩小手势，
-    // 双击手势，从点击点放大或复原
-    // 单击手势,退出
 }
 
 - (void)layoutSubviews {
@@ -58,39 +71,56 @@
     self.scrollView.frame = self.bounds;
     self.imageView.size = CGSizeMake(self.width, self.height * 0.5);
     self.imageView.center = CGPointMake(self.width * 0.5, self.height * 0.5);
-    self.scrollView.maximumZoomScale = self.imageView.image.size.width / self.imageView.width;
 }
 
 - (nullable UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
     return self.imageView;
 }
 
+#pragma mark - 事件
+
+#pragma mark 缩放完毕，调整contentSize,使之能完整显示图片
+
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView {
-    NSLog(@"zoomScale:%f", scrollView.zoomScale);
-    NSLog(@"frame:%@", NSStringFromCGRect(self.imageView.frame));
+    scrollView.contentSize = CGSizeMake(scrollView.width * scrollView.zoomScale,
+                                        scrollView.height * scrollView.zoomScale);
+}
 
-    // 不管以哪种形式放大或者缩小，UIImageView的实际位置始终于处于scrollView视觉的正中央。
-    
-    // 未放大时通过坐标使其始终在正中央,放大时通过contentOffset让其在正中央
-    CGFloat x = (self.scrollView.width - self.imageView.width) * 0.5; if (x < 0) x = 0;
-    CGFloat y = (self.scrollView.height - self.imageView.height) * 0.5; if (y < 0) y = 0;
-    self.imageView.origin = CGPointMake(x, y);
-    
-    // 计算contentSize
-    scrollView.contentSize = self.imageView.size;
-    
-    
-    // 缩放操作时始终显示在正中央
-    CGFloat offsetX = (scrollView.contentSize.width - scrollView.width) * 0.5; if (offsetX < 0) offsetX = 0;
-    CGFloat offsetY = (scrollView.contentSize.height - scrollView.height) * 0.5; if (offsetY < 0) offsetY = 0;
-    scrollView.contentOffset = CGPointMake(offsetX , offsetY);
-    
-    
-    
-    // 1.取出放大的UIImageView的大小
-    // 根据不同的缩放位置，contentOffset位置不一样。
-    
+#pragma mark 手势单击
 
+- (void)handleSingleTap:(UIGestureRecognizer *)sender {
+    NSLog(@"单击事件");
+}
+
+#pragma mark 手势双击
+
+- (void)handleDoubleTap:(UIGestureRecognizer *)sender {
+    CGPoint touchPoint = [sender locationInView:self];
+    CGFloat zoomScale = self.scrollView.minimumZoomScale;   // 缩小
+    if (self.scrollView.zoomScale != self.scrollView.maximumZoomScale) {
+        zoomScale = self.scrollView.maximumZoomScale;       // 放大
+        [self touchPointWantToBeCenter:touchPoint];
+    }
+    [self animationChangeZoom:zoomScale];
+}
+
+#pragma mark - 工具方法
+
+- (void)animationChangeZoom:(CGFloat)zoomScale {
+    WEAK_REF(weakSelf, self);
+    [UIView animateWithDuration:0.25 animations:^{
+        weakSelf.scrollView.zoomScale = zoomScale;
+    }];
+}
+
+// 点击的位置想成为中点，但是滚不动则不滚了
+- (void)touchPointWantToBeCenter:(CGPoint)touchPoint {
+//    CGFloat offsetX;
+//    CGFloat offsetY;
+//    WEAK_REF(weakSelf, self);
+//    [UIView animateWithDuration:0.25 animations:^{
+//        [weakSelf.scrollView setContentOffset:CGPointMake(offsetX, offsetY)];
+//    }];
 }
 
 @end
