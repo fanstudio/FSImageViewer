@@ -13,11 +13,14 @@
 @interface FSImageViewerItemView () <UIScrollViewDelegate>
 
 @property (nonatomic, weak) UIScrollView *scrollView;
-@property (nonatomic, weak)  UIImageView *imageView;
+@property (nonatomic, assign) BOOL needChangeOffset;
+@property (nonatomic, assign) CGPoint zoomedPoint;
 
 @end
 
 @implementation FSImageViewerItemView
+
+#pragma mark - lifeCycle
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
@@ -29,6 +32,8 @@
     return self;
 }
 
+#pragma mark - setupSubviews
+
 - (void)setupScrollView {
     UIScrollView *scrollView = [UIScrollView new];
     [self addSubview:scrollView];
@@ -38,32 +43,29 @@
     scrollView.maximumZoomScale = 3.0;
 }
 
-// 放大手势
-// 缩小手势，
-// 双击手势，从点击点放大或复原
-// 单击手势,退出
 - (void)addGestureRecognizer {
+    // 添加单击手势
     UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:
-                                                self action:@selector(handleSingleTap:)];
+                                                self action:@selector(onSingleTap:)];
     singleTapGesture.numberOfTapsRequired = 1;
-    singleTapGesture.numberOfTouchesRequired  = 1;
     [self.scrollView addGestureRecognizer:singleTapGesture];
     
+    // 添加双击手势
     UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:
-                                                self action:@selector(handleDoubleTap:)];
+                                                self action:@selector(onDoubleTap:)];
     doubleTapGesture.numberOfTapsRequired = 2;
-    doubleTapGesture.numberOfTouchesRequired = 1;
     [self.scrollView addGestureRecognizer:doubleTapGesture];
     
+    // 注册双击时，单击手势无效
     [singleTapGesture requireGestureRecognizerToFail:doubleTapGesture];
 }
 
 - (void)setupImageView {
-    UIImageView *imageView = [UIImageView new];
-    [self.scrollView addSubview:imageView];
-    self.imageView = imageView;
-    imageView.image = [UIImage imageNamed:@"bg"];
+    _imageView = [UIImageView new];
+    [self.scrollView addSubview:_imageView];
 }
+
+#pragma mark - layout
 
 - (void)layoutSubviews {
     [super layoutSubviews];
@@ -82,45 +84,88 @@
 #pragma mark 缩放完毕，调整contentSize,使之能完整显示图片
 
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView {
+    // 注意scrollView的自身的放大与缩小，以及通过设置scrollView的zoomScale的方式来缩放，被缩放的对象原点x,y值是不会变化的
     scrollView.contentSize = CGSizeMake(scrollView.width * scrollView.zoomScale,
                                         scrollView.height * scrollView.zoomScale);
 }
 
 #pragma mark 手势单击
 
-- (void)handleSingleTap:(UIGestureRecognizer *)sender {
-    NSLog(@"单击事件");
+- (void)onSingleTap:(UIGestureRecognizer *)sender {
+    if (self.didUserSingleTap) self.didUserSingleTap();
 }
 
-#pragma mark 手势双击
+#pragma mark 手势双击：从点击点放大到最大或复原
 
-- (void)handleDoubleTap:(UIGestureRecognizer *)sender {
-    CGPoint touchPoint = [sender locationInView:self];
+- (void)onDoubleTap:(UIGestureRecognizer *)sender {
     CGFloat zoomScale = self.scrollView.minimumZoomScale;   // 缩小
+    CGPoint touchPoint = [sender locationInView:self];
+    self.needChangeOffset = NO;
+    
     if (self.scrollView.zoomScale != self.scrollView.maximumZoomScale) {
         zoomScale = self.scrollView.maximumZoomScale;       // 放大
-        [self touchPointWantToBeCenter:touchPoint];
+        self.zoomedPoint = [self zoomedPointOnScrollView:touchPoint zoomScale:zoomScale];
+        self.needChangeOffset = YES;
     }
     [self animationChangeZoom:zoomScale];
 }
-
-#pragma mark - 工具方法
 
 - (void)animationChangeZoom:(CGFloat)zoomScale {
     WEAK_REF(weakSelf, self);
     [UIView animateWithDuration:0.25 animations:^{
         weakSelf.scrollView.zoomScale = zoomScale;
+        // 默认通过zooScale来缩放，是基于图像的中心来进行缩放，
+        // 这里优化一下，用户点击哪个位置，放大后，该点为中心点,以便于查看
+        if (!weakSelf.needChangeOffset) return;
+        [weakSelf changePointToScrollViewCenter:weakSelf.zoomedPoint zoomScale:zoomScale];
     }];
 }
 
-// 点击的位置想成为中点，但是滚不动则不滚了
-- (void)touchPointWantToBeCenter:(CGPoint)touchPoint {
-//    CGFloat offsetX;
-//    CGFloat offsetY;
-//    WEAK_REF(weakSelf, self);
-//    [UIView animateWithDuration:0.25 animations:^{
-//        [weakSelf.scrollView setContentOffset:CGPointMake(offsetX, offsetY)];
-//    }];
+#pragma mark - 工具方法
+
+/*************************************************
+ * 作用：获取一个点被放大后在scrollView的位置
+ * 参数：
+ *  touchOnScrollViewPoint - 在scrollView上触摸的位置
+ *  zoomScale - scrollView最终会被放大的级别
+ ************************************************/
+- (CGPoint)zoomedPointOnScrollView:(CGPoint)originalPoint zoomScale:(CGFloat)zoomScale {
+    // 1.将触摸在scrollView上的点转换为在图像上的位置
+    CGPoint onImagePoint = [self.scrollView convertPoint:originalPoint toView:self.imageView];
+    
+    /* 2.计算图像被放大后在的位置，注意，这里的算法应该同scrollView
+     代理方法中的scrollViewDidZoom:方法一致，这里是等比例缩放 */
+    CGFloat touchZoomedX = onImagePoint.x * zoomScale;
+    CGFloat touchZoomedY = onImagePoint.y * zoomScale;
+    CGPoint zoomedPointOnImage = CGPointMake(touchZoomedX, touchZoomedY);
+    
+    // 3.再将图像上的位置转换为在scrollView上的位置
+    return [self.imageView convertPoint:zoomedPointOnImage toView:self.scrollView];
+}
+
+/*******************************************************************
+ * 作用：将指定的点偏移至scrollView的中心
+ * 参数：
+ *  point - 相对于scrollView的点，放大后的该点将置为scrollView的视角中心
+ *  zoomScale - scrollView最终会被放大的级别
+ *******************************************************************/
+- (void)changePointToScrollViewCenter:(CGPoint)point zoomScale:(CGFloat)zoomScale {
+    // 1.计算偏移量
+    CGFloat offsetX = point.x - self.scrollView.width * 0.5;
+    CGFloat offsetY = point.y - self.scrollView.height * 0.5;
+    
+    // 2.修正offset,使其不会偏移到contentSize之外，如果想强制该点至中心，将revise至为NO
+    BOOL revise = YES;
+    if (revise) {
+        CGFloat maxOffsetX = self.scrollView.width * zoomScale - self.scrollView.width;
+        CGFloat maxOffsetY = self.scrollView.height * zoomScale - self.scrollView.height;
+        if (offsetX > maxOffsetX) offsetX = maxOffsetX;
+        if (offsetX < 0) offsetX = 0;
+        if (offsetY > maxOffsetY) offsetY = maxOffsetY;
+        if (offsetY < 0) offsetY = 0;
+    }
+    // 3.设置偏移量
+    self.scrollView.contentOffset = CGPointMake(offsetX, offsetY);
 }
 
 @end

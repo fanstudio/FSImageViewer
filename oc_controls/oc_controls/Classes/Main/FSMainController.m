@@ -30,7 +30,10 @@
     FSImageViewerItemView *itemView = [FSImageViewerItemView new];
     [self.view addSubview:itemView];
     self.itemView = itemView;
-    itemView.backgroundColor = [UIColor whiteColor];
+    itemView.imageView.image = [UIImage imageNamed:@"bg"];
+    itemView.didUserSingleTap = ^() {
+        FSTrace;
+    };
 }
 
 - (void)setupTextView {

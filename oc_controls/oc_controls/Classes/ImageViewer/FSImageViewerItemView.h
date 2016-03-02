@@ -10,4 +10,9 @@
 
 @interface FSImageViewerItemView : UIView
 
+/** 用于图片展示 */
+@property (nonatomic, strong, readonly) UIImageView *imageView;
+/** 单击回调方法 */
+@property (nonatomic, strong) void (^didUserSingleTap)();
+
 @end
