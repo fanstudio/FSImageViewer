@@ -28,8 +28,13 @@
         [self setupScrollView];
         [self setupImageView];
         [self addGestureRecognizer];
+        [self listenImageViewValueChange];
     }
     return self;
+}
+
+- (void)dealloc {
+    [self.imageView removeObserver:self forKeyPath:@"image"];
 }
 
 #pragma mark - setupSubviews
@@ -62,7 +67,13 @@
 
 - (void)setupImageView {
     _imageView = [UIImageView new];
+    _imageView.contentMode = UIViewContentModeScaleAspectFit;
     [self.scrollView addSubview:_imageView];
+    _imageView.backgroundColor = [UIColor grayColor];
+}
+
+- (void)listenImageViewValueChange {
+    [self.imageView addObserver:self forKeyPath:@"image" options:NSKeyValueObservingOptionNew context:nil];
 }
 
 #pragma mark - layout
@@ -71,8 +82,12 @@
     [super layoutSubviews];
     
     self.scrollView.frame = self.bounds;
-    self.imageView.size = CGSizeMake(self.width, self.height * 0.5);
+    // 自适应图片的大小
+    self.imageView.size = [self image:self.imageView.image fitSize:self.size];
     self.imageView.center = CGPointMake(self.width * 0.5, self.height * 0.5);
+    
+    // 自适应图片能放大的比例
+    self.scrollView.maximumZoomScale = [self autoScale];
 }
 
 - (nullable UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
@@ -121,6 +136,17 @@
     }];
 }
 
+#pragma mark UIImage的值发生改变时，自适应图片的比例
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context {
+    // 图片切换时，恢复到默认，并手动触发一次重新自适应图片的大小
+    self.scrollView.zoomScale = 1.0;
+    [self setNeedsLayout];
+}
+
 #pragma mark - 工具方法
 
 /*************************************************
@@ -166,6 +192,37 @@
     }
     // 3.设置偏移量
     self.scrollView.contentOffset = CGPointMake(offsetX, offsetY);
+}
+
+/**
+ 将传入的image自适应size的大小，返回一个刚好能装满image的大小
+ */
+- (CGSize)image:(UIImage *)image fitSize:(CGSize)size {
+    if (!image) {
+        return CGSizeMake(self.width, self.height * 0.5);
+    }
+    CGFloat width = size.width;
+    CGFloat height = width * image.size.height / image.size.width;
+    if (height > size.height) {
+        height = size.height;
+        width = height * image.size.width / image.size.height;
+    }
+
+    return CGSizeMake(width, height);
+}
+
+/**
+ 自动配置图片能放大的比例，这里刚好放大到真实的尺寸
+ */
+- (CGFloat)autoScale {
+    CGFloat scale = 1.0;
+    if (!self.imageView.image) {
+        return scale;
+    }
+    
+    scale = self.imageView.image.size.width / self.imageView.width;
+    if (scale < 1.0) scale = 1.0;
+    return scale;
 }
 
 @end

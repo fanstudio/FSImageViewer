@@ -30,7 +30,6 @@
     FSImageViewerItemView *itemView = [FSImageViewerItemView new];
     [self.view addSubview:itemView];
     self.itemView = itemView;
-    itemView.imageView.image = [UIImage imageNamed:@"bg"];
     itemView.didUserSingleTap = ^() {
         FSTrace;
     };
@@ -52,5 +51,20 @@
                                             textContentViewW, textContentViewH);
 }
 
+- (void)onTimer {
+    NSString *str = nil;
+    static BOOL flag = YES;
+    if (flag) {
+        str = @"3";
+    } else {
+        str = @"2";
+    }
+    flag = !flag;
+    self.itemView.imageView.image = [UIImage imageNamed:str];
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [self onTimer];
+}
 
 @end
